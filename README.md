@@ -1,5 +1,8 @@
 # AI-Vendor-Coordination-Procurement-Automation
 
+<img width="1282" height="617" alt="image" src="https://github.com/user-attachments/assets/417739a4-c6d3-44fc-8f12-0ecd9f7f4e43" />
+
+
 This n8n workflow automates the complete procurement and vendor coordination process using AI, Google Sheets, Airtable, Gmail, WhatsApp, and Slack integrations.
 
 The system reduces manual follow-ups by automatically analyzing procurement requests, identifying vendors, sending RFQs, tracking responses, sending reminders, and escalating delays.
