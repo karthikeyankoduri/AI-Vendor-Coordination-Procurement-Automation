@@ -1,0 +1,723 @@
+{
+  "name": "AI-Powered Vendor Coordination & Procurement System",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": "<__PLACEHOLDER_VALUE__Your Google Sheets Document ID__>",
+        "sheetName": "<__PLACEHOLDER_VALUE__Sheet name (e.g., Procurement Requests)__>",
+        "event": "rowAdded",
+        "options": {}
+      },
+      "id": "c97c41ba-7bce-4a02-b356-8d4eb1a39837",
+      "name": "Google Sheets Trigger",
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        304
+      ],
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "eQwT9Bm0gSo12nqY",
+          "name": "Google Sheets Trigger OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze this procurement request:\n\nMaterial: {{ $json.materialName }}\nQuantity: {{ $json.quantity }}\nBudget: ${{ $json.budget }}\nDeadline: {{ $json.deadline }}\nPriority: {{ $json.priority }}\nProject: {{ $json.projectName }}\n\nExtract:\n1. Material type/category\n2. Urgency level (Low/Medium/High/Critical)\n3. Brief summary\n4. Suggest 3 suitable vendor names based on the material type",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a procurement specialist AI. Analyze requests and provide structured insights about material types, urgency, and vendor recommendations."
+        }
+      },
+      "id": "5bffa6bc-9c70-47dc-8ba7-72b6b3d10b15",
+      "name": "AI Procurement Analyzer",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        464,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "53d9ae2e-6d36-41fc-b9ef-be2adf94dfc7",
+      "name": "OpenAI Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        472,
+        624
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "CZLoIJmmqOizS7EN",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": {
+          "materialType": "Construction Materials",
+          "urgency": "High",
+          "summary": "Request for 100 units of steel beams for building construction project",
+          "suggestedVendors": [
+            "Vendor A",
+            "Vendor B",
+            "Vendor C"
+          ]
+        }
+      },
+      "id": "aaf660d1-e397-43eb-8d60-90e0721648e0",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        600,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": "<__PLACEHOLDER_VALUE__Vendor Database Google Sheet ID__>",
+        "sheetName": "<__PLACEHOLDER_VALUE__Vendors sheet name__>",
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Category",
+              "lookupValue": "={{ $json.materialType }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "67c4a87a-79a7-45e7-9417-7330eda875cf",
+      "name": "Fetch Vendors from Database",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        816,
+        400
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Kh1Lr3j75tbcSnYS",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "rfqId",
+              "value": "={{ $now.toFormat(\"yyyyMMdd\") }}-{{ $json.vendorName }}-{{ $itemIndex }}",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "vendorName",
+              "value": "={{ $json.vendorName }}",
+              "type": "string"
+            },
+            {
+              "id": "3",
+              "name": "vendorEmail",
+              "value": "={{ $json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "4",
+              "name": "vendorPhone",
+              "value": "={{ $json.phone }}",
+              "type": "string"
+            },
+            {
+              "id": "5",
+              "name": "materialName",
+              "value": "={{ $(\"Google Sheets Trigger\").item.json.materialName ?? $(\"Airtable Trigger\").item.json.materialName }}",
+              "type": "string"
+            },
+            {
+              "id": "6",
+              "name": "quantity",
+              "value": "={{ $(\"Google Sheets Trigger\").item.json.quantity ?? $(\"Airtable Trigger\").item.json.quantity }}",
+              "type": "number"
+            },
+            {
+              "id": "7",
+              "name": "budget",
+              "value": "={{ $(\"Google Sheets Trigger\").item.json.budget ?? $(\"Airtable Trigger\").item.json.budget }}",
+              "type": "number"
+            },
+            {
+              "id": "8",
+              "name": "deadline",
+              "value": "={{ $(\"Google Sheets Trigger\").item.json.deadline ?? $(\"Airtable Trigger\").item.json.deadline }}",
+              "type": "string"
+            },
+            {
+              "id": "9",
+              "name": "projectName",
+              "value": "={{ $(\"Google Sheets Trigger\").item.json.projectName ?? $(\"Airtable Trigger\").item.json.projectName }}",
+              "type": "string"
+            },
+            {
+              "id": "10",
+              "name": "urgency",
+              "value": "={{ $(\"AI Procurement Analyzer\").item.json.urgency }}",
+              "type": "string"
+            },
+            {
+              "id": "11",
+              "name": "rfqSentDate",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "12",
+              "name": "status",
+              "value": "RFQ Sent",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "df2bb1c8-02dd-466d-9838-14826fafbd2d",
+      "name": "Prepare RFQ Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1040,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.vendorEmail }}",
+        "subject": "=RFQ: {{ $json.materialName }} - {{ $json.projectName }}",
+        "message": "=<h2>Request for Quotation</h2>\n<p>Dear {{ $json.vendorName }},</p>\n<p>We would like to request a quotation for the following:</p>\n<table border=\"1\" cellpadding=\"10\">\n<tr><td><strong>RFQ ID:</strong></td><td>{{ $json.rfqId }}</td></tr>\n<tr><td><strong>Material:</strong></td><td>{{ $json.materialName }}</td></tr>\n<tr><td><strong>Quantity:</strong></td><td>{{ $json.quantity }}</td></tr>\n<tr><td><strong>Budget:</strong></td><td>${{ $json.budget }}</td></tr>\n<tr><td><strong>Deadline:</strong></td><td>{{ $json.deadline }}</td></tr>\n<tr><td><strong>Project:</strong></td><td>{{ $json.projectName }}</td></tr>\n<tr><td><strong>Urgency:</strong></td><td>{{ $json.urgency }}</td></tr>\n</table>\n<p>Please provide your quotation including:</p>\n<ul>\n<li>Unit price</li>\n<li>Total cost</li>\n<li>Delivery time</li>\n<li>Payment terms</li>\n</ul>\n<p>Best regards,<br>Procurement Team</p>",
+        "options": {}
+      },
+      "id": "5e86571f-61ba-45aa-8c43-e4622a89ca96",
+      "name": "Send RFQ via Gmail",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1264,
+        304
+      ],
+      "webhookId": "f59ddd71-583c-4130-ac28-45ab6d9cc659",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "uRoXDHFWy6jR3yff",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "b957193d-7b01-4351-8701-ce9df045a848",
+      "name": "Merge RFQ Channels",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1488,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "baseId": "<__PLACEHOLDER_VALUE__Your Airtable Base ID__>",
+        "tableId": "<__PLACEHOLDER_VALUE__Your Airtable Table ID__>",
+        "triggerField": "<__PLACEHOLDER_VALUE__Created Time field name__>",
+        "additionalFields": {}
+      },
+      "id": "ea1a6763-b5d7-4734-9ea3-b8cf98694b64",
+      "name": "Airtable Trigger",
+      "type": "n8n-nodes-base.airtableTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "<__PLACEHOLDER_VALUE__Your WhatsApp Business Phone Number ID__>",
+        "recipientPhoneNumber": "={{ $json.vendorPhone }}",
+        "textBody": "=*Request for Quotation*\n\nRFQ ID: {{ $json.rfqId }}\nMaterial: {{ $json.materialName }}\nQuantity: {{ $json.quantity }}\nBudget: ${{ $json.budget }}\nDeadline: {{ $json.deadline }}\nProject: {{ $json.projectName }}\nUrgency: {{ $json.urgency }}\n\nPlease provide your quotation with unit price, total cost, delivery time, and payment terms.\n\nThank you!",
+        "additionalFields": {}
+      },
+      "id": "51b76c1a-186d-4a38-b2c4-36e5467e340d",
+      "name": "Send RFQ via WhatsApp",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        1264,
+        496
+      ],
+      "webhookId": "f7eb6540-6ff4-49c1-a11c-2a6603a86906"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "12fga-Rsgvn9DFc0ZnE3JaLjadVbLgzBzQw8q8zLs1ZQ",
+          "mode": "list",
+          "cachedResultName": "failed",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/12fga-Rsgvn9DFc0ZnE3JaLjadVbLgzBzQw8q8zLs1ZQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/12fga-Rsgvn9DFc0ZnE3JaLjadVbLgzBzQw8q8zLs1ZQ/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "campaign_id",
+              "displayName": "campaign_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "batch_id",
+              "displayName": "batch_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "error_message",
+              "displayName": "error_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "failed_at",
+              "displayName": "failed_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "bb065de4-7c81-4a8e-ab26-43f1f4f1d685",
+      "name": "Track RFQ in Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1712,
+        400
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Kh1Lr3j75tbcSnYS",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 24
+            }
+          ]
+        }
+      },
+      "id": "7f75f200-a427-4b21-8cfb-50babd096d37",
+      "name": "Daily Reminder Check",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        824
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "15NBcuhIc0b8VgTOExUcBALFmYPROsFD0qnFEe_5UJVs",
+          "mode": "list",
+          "cachedResultName": "success",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15NBcuhIc0b8VgTOExUcBALFmYPROsFD0qnFEe_5UJVs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15NBcuhIc0b8VgTOExUcBALFmYPROsFD0qnFEe_5UJVs/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "11b1af40-5cb8-4544-9330-dc1611d0142d",
+      "name": "Fetch Pending RFQs",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        464,
+        824
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Kh1Lr3j75tbcSnYS",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $now.diff(DateTime.fromISO($json.rfqSentDate), \"days\").days }}",
+              "rightValue": 3,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1b3b2406-6152-4eb5-9ba5-e2a4f553e9bd",
+      "name": "Check If Reminder Needed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        688,
+        824
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.vendorEmail }}",
+        "subject": "=REMINDER: RFQ {{ $json.rfqId }} - Response Needed",
+        "message": "=<h2>Reminder: Request for Quotation</h2>\n<p>Dear {{ $json.vendorName }},</p>\n<p>This is a friendly reminder regarding our RFQ sent on {{ DateTime.fromISO($json.rfqSentDate).toFormat(\"MMMM d, yyyy\") }}.</p>\n<p><strong>RFQ ID:</strong> {{ $json.rfqId }}</p>\n<p>We have not yet received your quotation. Please respond at your earliest convenience.</p>\n<p><strong>Deadline:</strong> {{ $json.deadline }}</p>\n<p>If you have already submitted your quotation, please disregard this message.</p>\n<p>Best regards,<br>Procurement Team</p>",
+        "options": {}
+      },
+      "id": "3552c5e8-4a45-4617-8b60-479dec1cac44",
+      "name": "Send Reminder Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        912,
+        728
+      ],
+      "webhookId": "01b2762d-d12f-49a4-88d6-5a2d55f0c230",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "uRoXDHFWy6jR3yff",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $now.diff(DateTime.fromISO($json.rfqSentDate), \"days\").days }}",
+              "rightValue": 7,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3e6c7c82-cecf-40e7-b310-cccb8925a564",
+      "name": "Check If Escalation Needed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        912,
+        920
+      ]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "messageType": "block",
+        "blocksUi": "=[\n  {\n    \"type\": \"header\",\n    \"text\": {\n      \"type\": \"plain_text\",\n      \"text\": \"🚨 RFQ Escalation Required\"\n    }\n  },\n  {\n    \"type\": \"section\",\n    \"fields\": [\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": \"*RFQ ID:*\\n{{ $json.rfqId }}\"\n      },\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": \"*Vendor:*\\n{{ $json.vendorName }}\"\n      },\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": \"*Days Since RFQ:*\\n{{ $now.diff(DateTime.fromISO($json.rfqSentDate), \"days\").days }} days\"\n      },\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": \"*Deadline:*\\n{{ $json.deadline }}\"\n      }\n    ]\n  },\n  {\n    \"type\": \"section\",\n    \"text\": {\n      \"type\": \"mrkdwn\",\n      \"text\": \"No response received from vendor. Manager intervention required.\"\n    }\n  }\n]",
+        "text": "=Escalation: No response from vendor {{ $json.vendorName }}",
+        "otherOptions": {}
+      },
+      "id": "54776650-b5ac-4a70-ac2c-c500beb9f16c",
+      "name": "Send Slack Alert to Manager",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        1136,
+        920
+      ],
+      "webhookId": "af864d19-0366-4e0a-a996-3823f927d6e7"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Procurement Analyzer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Procurement Analyzer": {
+      "main": [
+        [
+          {
+            "node": "Fetch Vendors from Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Procurement Analyzer",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Procurement Analyzer",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Vendors from Database": {
+      "main": [
+        [
+          {
+            "node": "Prepare RFQ Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare RFQ Data": {
+      "main": [
+        [
+          {
+            "node": "Send RFQ via Gmail",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send RFQ via WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send RFQ via Gmail": {
+      "main": [
+        [
+          {
+            "node": "Merge RFQ Channels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge RFQ Channels": {
+      "main": [
+        [
+          {
+            "node": "Track RFQ in Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Procurement Analyzer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send RFQ via WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Merge RFQ Channels",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Daily Reminder Check": {
+      "main": [
+        [
+          {
+            "node": "Fetch Pending RFQs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Pending RFQs": {
+      "main": [
+        [
+          {
+            "node": "Check If Reminder Needed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check If Reminder Needed": {
+      "main": [
+        [
+          {
+            "node": "Send Reminder Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Check If Escalation Needed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check If Escalation Needed": {
+      "main": [
+        [
+          {
+            "node": "Send Slack Alert to Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "60c46a32-559b-445a-b635-c705d349f9d5",
+  "meta": {
+    "instanceId": "a2123173c0849c1ebd16447d7122d1ff9eb42f1cb79e4bde22d27fa7c2f6582e"
+  },
+  "id": "6p7608s4TZ8eslEN",
+  "tags": []
+}
